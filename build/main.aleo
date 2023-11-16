@@ -1,5 +1,8 @@
 program shamirss_leo.aleo;
 
+struct Shares:
+    is as [u32; 3u32];
+    ss as [field; 3u32];
 
 
 function main:

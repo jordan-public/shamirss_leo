@@ -1,26 +1,53 @@
 // The 'shamirss_leo' program.
 program shamirss_leo.aleo {
 
+    const max_n: u32 = 10u32; // Number of shares to generate
+    const max_k: u32 = 5u32; // Number of shares required to recover secret
+
+    const n: u32 = 3u32;
+    const k: u32 = 2u32;
+    const km1: u32 = 1u32;
+
     struct Share {
-        i: u32,
-        s: field,
+        x: u32,
+        y: field,
     }
 
-    function generate_shares(secret: u32, n: u32, k: u32) -> [Share; n] {
+    function generate_shares(secret: field, coefficients: [field; 4 /*max_k-1*/]) -> [Share; 10 /*max_n*/] {
+        assert(n <= max_n);
+        assert(k <= max_k);
+        assert(n >= k);
+
         // Assuming a field type is defined elsewhere with modular arithmetic
-        let prime_modulus = choose_prime_greater_than(secret);
-        let field = new Field(prime_modulus);
+        // let prime_modulus = choose_prime_greater_than(secret);
+        // let field = new Field(prime_modulus);
 
-        var coefficients: [field; k-1] = [...]; // Randomly generate coefficients
+        //let coefficients: [field; 4 /*max_k-1*/] = [0field; 4 /*max_k-1*/]; // Randomly generate coefficients
+        // for i:u32 in 0u32..(km1 /*k-1u32*/) {
+        //     coefficients[i] = ChaCha::rand_field();
+        // }
 
-        var shares: [Share; n] = [...]; // Initialize array of shares
+        //let shares: [Share; 10 /*n*/] = [Share {x: 0u32, y: 0field}; 10 /*n*/]; // Initialize array of shares
+        let shares: [Share; 10 /*n*/] = [
+            Share {x: 0u32, y: 0field},
+            Share {x: 0u32, y: 0field},
+            Share {x: 0u32, y: 0field},
+            Share {x: 0u32, y: 0field},
+            Share {x: 0u32, y: 0field},
+            Share {x: 0u32, y: 0field},
+            Share {x: 0u32, y: 0field},
+            Share {x: 0u32, y: 0field},
+            Share {x: 0u32, y: 0field},
+            Share {x: 0u32, y: 0field}]; // Initialize array of shares
 
-        for i in 0..n {
-            let x = field.from(i);
-            let mut y = field.from(secret);
+        for i:u32 in 0u32..n {
+            let x:field = i as field;
+            let /*mut*/ y:field = secret;
 
-            for j in 0..(k-1) {
-                y += coefficients[j] * x.pow(j as u32 + 1);
+            let /*mut*/ xpower:field = 1field;
+            for j:u32 in 0u32..(km1 /*k-1u32*/) {
+                xpower = xpower * x;
+                y += coefficients[j] * xpower;
             }
 
             shares[i] = Share { x: i, y: y };
@@ -29,29 +56,41 @@ program shamirss_leo.aleo {
         return shares;
     }
 
-    function recover_secret(shares: [Share; k], k: u32) -> u32 {
-        let prime_modulus = ...; // Same prime modulus as in generate_shares
-        let field = new Field(prime_modulus);
+    function recover_secret(shares: [Share; 5 /*k*/]) -> field {
+        assert(n <= max_n);
+        assert(k <= max_k);
+        assert(n >= k);
 
-        let mut secret = field.from(0);
+        // let prime_modulus = ...; // Same prime modulus as in generate_shares
+        // let field = new Field(prime_modulus);
 
-        for i in 0..k {
-            let mut lagrange_product = field.from(1);
+        let /*mut*/ secret:field = 0field;
 
-            for j in 0..k {
+        for i:u32 in 0u32..k {
+            let /*mut*/ lagrange_product:field = 0field;
+
+            for j:u32 in 0u32..k {
                 if i != j {
-                    lagrange_product *= (field.from(0) - field.from(shares[j].x)) / (field.from(shares[i].x) - field.from(shares[j].x));
+                    lagrange_product *= (0field - shares[j].x as field) / (shares[i].x as field - shares[j].x as field);
                 }
             }
 
-            secret += field.from(shares[i].y) * lagrange_product;
+            secret += shares[i].y as field * lagrange_product;
         }
 
-        return secret.to_u32(); // Convert back to u32
+        return secret;
     }
 
 
     transition main(public a: u32, b: u32) -> u32 {
+        let rand_fields :[field; 4/*max_k-1*/] = [
+            5298347509234875091384672345field, 
+            6093485123450913845341535field, 
+            34598745019283741451234104396field, 
+            8714098127409182414368459183475field
+        ]; 
+        generate_shares(4549523035494294242134523field, rand_fields);
+
         let c: u32 = a + b;
         return c;
     }
